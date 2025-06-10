@@ -28,7 +28,9 @@ et **624** radiographies de tests dont:
 Donc on a environs 88% des images pour l'entraînement et 12% pour les tests
 
 ### Comment obtenir les libellés ?
-`.
+
+```
+.
 ├── test/
 │   ├── NORMAL/
 │   │   └── nom_image
@@ -38,7 +40,8 @@ Donc on a environs 88% des images pour l'entraînement et 12% pour les tests
     ├── NORMAL/
     │   └── nom_image
     └── PNEUMONIA/
-        └── nom_image_(virus/bacterie)`
+        └── nom_image_(virus/bacterie)
+```
 
 Les images se trouvant dans les dossiers *NORMAL* sont des radiographies saines, les dossiers *PNEUMONIA* sont des radiographies de pneumonies et le type de la pneumonies se trouve dans le nom de l'image (ex: image_241_virus.jpg)
 
