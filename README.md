@@ -17,6 +17,7 @@ La problématique est la suivante :
 
 ### Où le trouver ?
 Les radiographies se trouvent  dans le dans le dossier [chest_XRay](https://github.com/EpitechMscProPromo2026/T-DEV-810-STG_10/tree/main/chest_Xray):
+
 avec **5216** radiographies de train dont:
   - 1341 radiographies saines
   - 3875 radiographies de pneumonies
@@ -46,19 +47,6 @@ Donc on a environs 88% des images pour l'entraînement et 12% pour les tests
 Les images se trouvant dans les dossiers *NORMAL* sont des radiographies saines, les dossiers *PNEUMONIA* sont des radiographies de pneumonies et le type de la pneumonies se trouve dans le nom de l'image (ex: image_241_virus.jpg)
 
 ## 1. Détection de Pneumonies via PCA et Régression Logistique
-
-### 1.1 Introduction
-
-Ce projet vise à développer un modèle de classification d’images radiographiques pour distinguer trois classes : **Normal**, **Pneumonie Bactérienne** et **Pneumonie Virale**.
-Contrairement aux approches basées sur les réseaux convolutifs (CNN), nous utilisons ici une méthode classique combinant la réduction de dimension par **Analyse en Composantes Principales (PCA)** et un modèle de **Régression Logistique**.
-L’objectif est d’évaluer l’impact de plusieurs paramètres (taille des images, nombre de composantes PCA, réglages du modèle) sur la précision globale.
-
-### 1.2 Description du Dataset
-
-Le dataset est composé d’images radiographiques annotées, réparties en trois catégories : normal, pneumonie bactérienne, pneumonie virale.
-Les images sont initialement en niveaux de gris et ont été redimensionnées pour uniformiser les entrées.
-Le découpage des données suit un schéma stratifié 80% entraînement et 20% test pour assurer la représentativité de chaque classe.
-
 ### 1.3 Prétraitement des Images
 
 Les images ont subi les étapes suivantes :
