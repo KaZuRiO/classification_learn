@@ -366,10 +366,10 @@ Les labels sont transformées de sorte à obtenir ce format :
 
 #### Courbes des précisions en fonction du nombre de voisin
 ##### Binaire
-![./knn/classification_binaire.png]
+![classification binaire](./knn/classification_binaire.png)
 
-##### Trinaire
-![./knn/classification_trinaire.png]
+##### Ternaire
+![classification ternaire](./knn/classification_trinaire.png)
 
 ### Conclusion 
 
