@@ -46,6 +46,104 @@ Donc on a environs 88% des images pour l'entraînement et 12% pour les tests
 
 Les images se trouvant dans les dossiers *NORMAL* sont des radiographies saines, les dossiers *PNEUMONIA* sont des radiographies de pneumonies et le type de la pneumonies se trouve dans le nom de l'image (ex: image_241_virus.jpg)
 
+## Algorithme KNearest-Neighbors (KNN)
+
+### Transformations des données
+
+L'algortihme pour avoir une cohérence demande toujours le même nombre de features [^1]
+
+[^1]: Une feature est un pixel de notre image qu'on souhaite passer dans le modèle
+
+
+
+
+### Résultat 
+
+#### Meilleures Résultats
+
+| Paramètres | type classification | Accuracy |
+| ---------- | ------------------- | -------- |
+| 2          | binaire             | 79%      |
+| 12         | ternaire            | 66%      | 
+
+#### Courbes des précisions en fonction du nombre de voisin
+##### Binaire
+![classification binaire](./knn/classification_binaire.png)
+
+##### Ternaire
+![classification ternaire](./knn/classification_trinaire.png)
+
+### Observation 
+
+L'algorithme pourrait être plus intéressant sur des données qui sont plus différentes les une des autres, par exemple une IA qui permet de voir quel
+animal est représenté sur l'image car un chien et un chat ont des grandes différences. 
+Dans notre cas, les images n'ont pas d'énormes différences visibles, une personne qui n'est pas du domaine n'arriverai pas à dire laquel est une pneumonie ou pas. 
+
+En plus KNN prends énormément de RAM car quand il cherche à prédire une image, il est obligé de mettre en mémoire chaque point de chaque image pour faire les calculs de distance le plus rapidement possible.
+
+On remarque sur les résultats que l'algorithme s'en sort moins bien avec la classification entre virale et bactérienne, car la différence est moins visible qu'entre une personne ayant une pneumonie et une personne qui n'en a pas.
+
+
+
+## 4. Détection de la Pneumonie via Régression Logistique
+
+### 4.1 Introduction
+
+Ce projet a pour objectif de classifier des radiographies thoraciques en trois catégories : **Normal**, **Pneumonie Bactérienne**, et **Pneumonie Virale**.
+Nous utilisons ici un modèle de **régression logistique multinomiale**, approche linéaire classique bien connue pour sa robustesse et sa simplicité.
+
+### 4.2 Exploration des Données
+
+Le dataset est structuré en trois sous-ensembles :
+
+- **train**
+- **val**
+- **test**
+
+Les images sont étiquetées dans les classes `NORMAL`, `BACTERIA`, et `VIRUS`.
+Une exploration visuelle (affichage d’images et histogrammes RGB) permet de mieux cerner la distribution des intensités et couleurs dans le jeu de données.
+
+### 4.3 Prétraitement des Données
+
+Les étapes de transformation incluent :
+
+- **Redimensionnement** des images à 128x128 pixels
+- Conversion BGR → RGB
+- Encodage des étiquettes (`NORMAL` → 0, `BACTERIA` → 1, `VIRUS` → 2)
+- Séparation en `X` (features) et `y` (labels)
+
+### 4.4 Extraction des Caractéristiques
+
+Les images matricielles sont aplaties en **vecteurs unidimensionnels** pour être compatibles avec le modèle de régression.
+
+- Aplatissement en vecteurs de taille `(128*128*3,)`
+- Optionnel : **normalisation des pixels** dans l’intervalle [0, 1]
+
+### 4.5 Modélisation avec Régression Logistique
+
+Le modèle est implémenté via `sklearn.linear_model.LogisticRegression`, avec les caractéristiques suivantes :
+
+- Mode `multinomial` (classification multi-classe)
+- Régularisation de type `L2` (ridge)
+- Solveur `saga` ou `lbfgs` selon les cas
+- Entraînement sur `train`, validation sur `val`, test final sur `test`
+
+### 4.6 Évaluation du Modèle
+
+Les performances sont analysées à l’aide de :
+
+- **Matrice de confusion**
+- **Classification report** : précision, rappel, F1-score par classe
+- **Analyse des erreurs** : examen de cas mal classés pour comprendre les limites du modèle
+
+### 4.7 Conclusion
+
+La **régression logistique multinomiale** constitue une **baseline solide et interprétable** pour des tâches de classification d’images.
+Toutefois, ses performances sont limitées dès que la structure spatiale des images devient déterminante, ce qui est le cas pour les radiographies médicales.
+Des techniques comme les **réseaux de neurones convolutifs (CNN)** devraient être privilégiées pour améliorer significativement les résultats.
+
+
+
 ## 1. Détection de Pneumonies via PCA et Régression Logistique
 ### 1.3 Prétraitement des Images
 
@@ -282,108 +380,6 @@ Des modèles régularisés (Ridge, Lasso)
 Des transformations non linéaires
 
 Des approches neuronales ou convolutives
-
-## 4. Détection de la Pneumonie via Régression Logistique
-
-### 4.1 Introduction
-
-Ce projet a pour objectif de classifier des radiographies thoraciques en trois catégories : **Normal**, **Pneumonie Bactérienne**, et **Pneumonie Virale**.
-Nous utilisons ici un modèle de **régression logistique multinomiale**, approche linéaire classique bien connue pour sa robustesse et sa simplicité.
-
-### 4.2 Exploration des Données
-
-Le dataset est structuré en trois sous-ensembles :
-
-- **train**
-- **val**
-- **test**
-
-Les images sont étiquetées dans les classes `NORMAL`, `BACTERIA`, et `VIRUS`.
-Une exploration visuelle (affichage d’images et histogrammes RGB) permet de mieux cerner la distribution des intensités et couleurs dans le jeu de données.
-
-### 4.3 Prétraitement des Données
-
-Les étapes de transformation incluent :
-
-- **Redimensionnement** des images à 128x128 pixels
-- Conversion BGR → RGB
-- Encodage des étiquettes (`NORMAL` → 0, `BACTERIA` → 1, `VIRUS` → 2)
-- Séparation en `X` (features) et `y` (labels)
-
-### 4.4 Extraction des Caractéristiques
-
-Les images matricielles sont aplaties en **vecteurs unidimensionnels** pour être compatibles avec le modèle de régression.
-
-- Aplatissement en vecteurs de taille `(128*128*3,)`
-- Optionnel : **normalisation des pixels** dans l’intervalle [0, 1]
-
-### 4.5 Modélisation avec Régression Logistique
-
-Le modèle est implémenté via `sklearn.linear_model.LogisticRegression`, avec les caractéristiques suivantes :
-
-- Mode `multinomial` (classification multi-classe)
-- Régularisation de type `L2` (ridge)
-- Solveur `saga` ou `lbfgs` selon les cas
-- Entraînement sur `train`, validation sur `val`, test final sur `test`
-
-### 4.6 Évaluation du Modèle
-
-Les performances sont analysées à l’aide de :
-
-- **Matrice de confusion**
-- **Classification report** : précision, rappel, F1-score par classe
-- **Analyse des erreurs** : examen de cas mal classés pour comprendre les limites du modèle
-
-### 4.7 Conclusion
-
-La **régression logistique multinomiale** constitue une **baseline solide et interprétable** pour des tâches de classification d’images.
-Toutefois, ses performances sont limitées dès que la structure spatiale des images devient déterminante, ce qui est le cas pour les radiographies médicales.
-Des techniques comme les **réseaux de neurones convolutifs (CNN)** devraient être privilégiées pour améliorer significativement les résultats.
-
-## 5. Détection de la Pneumonie via KNearest-Neighbors (KNN)
-
-### Les données
-
-Les transformations appliqués aux images sont un redimensionnement de l'image en 128x128, puis un applitissement des images.
-Les labels sont transformées de sorte à obtenir ce format :
-
-#### Si on veut classifier que pneumonie ou sain (classification binaire)
-```
-```
-```
-```
-  - pneumonie = 1
-  - sain = 0
-#### Si on veut classifier le type de pneumonie (classification ternaire) 
-  - pneumonie virale = 2
-  - pneumonie bactérienne = 1
-  - sain = 0
-
-### Résultat 
-
-#### Meilleures Résultats
-
-| Paramètres | type classification | Accuracy |
-| ---------- | ------------------- | -------- |
-| 2          | binaire             | 79%      |
-| 12         | ternaire            | 66%      | 
-
-#### Courbes des précisions en fonction du nombre de voisin
-##### Binaire
-![classification binaire](./knn/classification_binaire.png)
-
-##### Ternaire
-![classification ternaire](./knn/classification_trinaire.png)
-
-### Conclusion 
-
-L'algorithme pourrait être plus intéressant sur des données qui sont plus différentes les une des autres, par exemple une IA qui permet de voir quel
-animal est représenté sur l'image car un chien et un chat ont des grandes différences. 
-Dans notre cas, les images n'ont pas d'énormes différences visibles, une personne qui n'est pas du domaine n'arriverai pas à dire laquel est une pneumonie ou pas. 
-
-En plus KNN prends énormément de RAM car quand il cherche à prédire une image, il est obligé de mettre en mémoire chaque point de chaque image pour faire les calculs de distance le plus rapidement possible.
-
-On remarque sur les résultats que l'algorithme s'en sort moins bien avec la classification entre virale et bactérienne, car la différence est moins visible qu'entre une personne ayant une pneumonie et une personne qui n'en a pas.
 
 ## 6. Comparatif des Modèles
 
