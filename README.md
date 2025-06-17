@@ -55,10 +55,10 @@ Les algorithmes demandent d'avoir le même nombre de features[^1] ce qui nous ob
 On a obtenu ce chiffre en testant différentes tailles sur les algorithmes.
 
 Puis les images sont flatten[^2] car le modèle ne prends pas les tableaux à plusieurs dimensions.
-
+[
 > Une image en nuance de gris contient 2 dimensions (position x et y du pixel qui contient la valeur du gris dans le pixel)
 > Une image en couleur contient 3 dimensions (position x et y qui contiennent un tableau contenant les valeurs pour les couleurs RGB (Red-Blue-Green))
-
+](#){.btn .btn-primary}
 [^1]: Une feature est un pixel de notre image qu'on souhaite passer dans le modèle
 [^2]: Transformations d'un tableau avec X dimensions en un tableau d'une seule dimension 
 
