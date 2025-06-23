@@ -122,15 +122,9 @@ Les meilleurs paramètres obtenus sont :
 | `min_samples_split` | `10`                |
 | `n_estimators`      | `300`               |
 
-Cette configuration a permis d’atteindre une **précision d’environ 78 %** sur le jeu de test.
-
 ### Évaluation du Modèle
 
-L’évaluation a été réalisée à l’aide des métriques classiques :
-
-- **Matrice de confusion** : permet d’observer les erreurs entre les trois classes
-- **Classification Report** : précision, rappel, F1-score par classe
-- **Analyse d’erreurs** : des exemples d’images mal classées peuvent mettre en lumière certaines limitations (chevauchement visuel entre VIRUS et BACTERIA, par exemple)
+Cette configuration a permis d’atteindre une **précision d’environ 78 %** sur le jeu de test.
 
 ### Observation
 
@@ -140,76 +134,13 @@ Cela s’explique par l’absence de prise en compte de la structure spatiale de
 L’utilisation de modèles plus complexes, tels que les **réseaux convolutifs (CNN)**, semble inévitable pour améliorer significativement la performance sur ce type de données.
 
 
+## Détection de la Pneumonie via Régression Logistique
 
-## 4. Détection de la Pneumonie via Régression Logistique
+### Explication
 
-### 4.1 Introduction
+#### Régression logistique
 
-Ce projet a pour objectif de classifier des radiographies thoraciques en trois catégories : **Normal**, **Pneumonie Bactérienne**, et **Pneumonie Virale**.
-Nous utilisons ici un modèle de **régression logistique multinomiale**, approche linéaire classique bien connue pour sa robustesse et sa simplicité.
-
-### 4.2 Exploration des Données
-
-Le dataset est structuré en trois sous-ensembles :
-
-- **train**
-- **val**
-- **test**
-
-Les images sont étiquetées dans les classes `NORMAL`, `BACTERIA`, et `VIRUS`.
-Une exploration visuelle (affichage d’images et histogrammes RGB) permet de mieux cerner la distribution des intensités et couleurs dans le jeu de données.
-
-### 4.3 Prétraitement des Données
-
-Les étapes de transformation incluent :
-
-- **Redimensionnement** des images à 128x128 pixels
-- Conversion BGR → RGB
-- Encodage des étiquettes (`NORMAL` → 0, `BACTERIA` → 1, `VIRUS` → 2)
-- Séparation en `X` (features) et `y` (labels)
-
-### 4.4 Extraction des Caractéristiques
-
-Les images matricielles sont aplaties en **vecteurs unidimensionnels** pour être compatibles avec le modèle de régression.
-
-- Aplatissement en vecteurs de taille `(128*128*3,)`
-- Optionnel : **normalisation des pixels** dans l’intervalle [0, 1]
-
-### 4.5 Modélisation avec Régression Logistique
-
-Le modèle est implémenté via `sklearn.linear_model.LogisticRegression`, avec les caractéristiques suivantes :
-
-- Mode `multinomial` (classification multi-classe)
-- Régularisation de type `L2` (ridge)
-- Solveur `saga` ou `lbfgs` selon les cas
-- Entraînement sur `train`, validation sur `val`, test final sur `test`
-
-### 4.6 Évaluation du Modèle
-
-Les performances sont analysées à l’aide de :
-
-- **Matrice de confusion**
-- **Classification report** : précision, rappel, F1-score par classe
-- **Analyse des erreurs** : examen de cas mal classés pour comprendre les limites du modèle
-
-### 4.7 Conclusion
-
-La **régression logistique multinomiale** constitue une **baseline solide et interprétable** pour des tâches de classification d’images.
-Toutefois, ses performances sont limitées dès que la structure spatiale des images devient déterminante, ce qui est le cas pour les radiographies médicales.
-Des techniques comme les **réseaux de neurones convolutifs (CNN)** devraient être privilégiées pour améliorer significativement les résultats.
-
-
-
-## 1. Détection de Pneumonies via PCA et Régression Logistique
-### 1.3 Prétraitement des Images
-
-Les images ont subi les étapes suivantes :
-
-- Conversion en niveaux de gris et aplatissement en vecteurs
-- Redimensionnement initial à 400x400 pixels (baseline), puis expérimentations avec tailles plus petites (200x200, 128x128, 100x100)
-- Normalisation des pixels entre 0 et 1 pour faciliter l’entraînement et la convergence des modèles
-
-### 1.4 Réduction de Dimension avec PCA
+#### PCA
 
 La PCA est appliquée pour réduire la dimensionnalité des vecteurs d’images tout en conservant la majorité de la variance. Différentes configurations ont été testées :
 
@@ -218,20 +149,19 @@ La PCA est appliquée pour réduire la dimensionnalité des vecteurs d’images 
 
 L’objectif est de trouver un compromis entre richesse des données conservées et complexité du modèle.
 
-### 1.5 Modélisation par Régression Logistique
+### Hyperparamètre
 
-Le classifieur utilisé est une régression logistique multiclasse, entraînée sur les données projetées par la PCA.
+- Mode `multinomial` (classification multi-classe)
+- Régularisation de type `L2` (ridge)
+- Solveur `saga` ou `lbfgs` selon les cas
 
-Plusieurs variantes ont été évaluées pour optimiser les performances :
+### Résultat
 
-- Nombre maximal d’itérations (max_iter)
-- Type de pénalité (L1 ou L2)
-- Méthode de résolution (solver)
-- Force de régularisation (C)
+#### Sans PCA
 
-### 1.6 Expérimentations et Résultats
+#### Avec PCA
 
-#### 1.6.1 Impact de la taille des images
+##### Impact de la taille des images
 
 | ID       | Taille Image | Description                          | Accuracy |
 | -------- | ------------ | ------------------------------------ | -------- |
@@ -242,7 +172,7 @@ Plusieurs variantes ont été évaluées pour optimiser les performances :
 
 **Observation :** La réduction agressive à 100x100 améliore légèrement la précision, probablement par effet de régularisation ou réduction du bruit.
 
-#### 1.6.2 Influence du nombre de composantes PCA (avec image_size=100x100)
+##### Influence du nombre de composantes PCA (avec image_size=100x100)
 
 | ID | n_components          | Description                         | Accuracy |
 | -- | --------------------- | ----------------------------------- | -------- |
@@ -252,7 +182,7 @@ Plusieurs variantes ont été évaluées pour optimiser les performances :
 | P3 | 100 (fixe)            | Nombre fixe de composantes          | 84%      |
 | P4 | 300 (très riche)     | Risque de bruit ou surapprentissage | 86%      |
 
-#### 1.6.3 Réglages du modèle de régression logistique
+##### Réglages du modèle de régression logistique
 
 | ID | Paramètres                 | Description                                    | Accuracy |
 | -- | --------------------------- | ---------------------------------------------- | -------- |
@@ -263,7 +193,7 @@ Plusieurs variantes ont été évaluées pour optimiser les performances :
 | M4 | C=0.1                       | Régularisation forte, modèle plus simple     | 78%      |
 | M5 | C=10.0                      | Faible régularisation, modèle plus flexible  | 84%      |
 
-### 1.7 Synthèse des Meilleures Configurations
+##### Synthèse des Meilleures Configurations
 
 | Test ID    | Accuracy | Commentaires                                    |
 | ---------- | -------- | ----------------------------------------------- |
@@ -271,34 +201,22 @@ Plusieurs variantes ont été évaluées pour optimiser les performances :
 | P1, P2, P4 | 86%      | PCA avec 90%-99% variance conservée optimal    |
 | M0, M3     | 86%      | Régression avec L1 et solver 'saga' performant |
 
-### 1.8 Conclusion
+
+### Observation
+
+La **régression logistique multinomiale** constitue une **baseline solide et interprétable** pour des tâches de classification d’images.
+Toutefois, ses performances sont limitées dès que la structure spatiale des images devient déterminante, ce qui est le cas pour les radiographies médicales.
+Des techniques comme les **réseaux de neurones convolutifs (CNN)** devraient être privilégiées pour améliorer significativement les résultats.
 
 L’utilisation combinée de la réduction de dimension par PCA et d’un modèle de régression logistique permet d’atteindre une précision satisfaisante (~86%) pour la classification de radiographies en trois classes.
 Les résultats suggèrent qu’une réduction modérée de la taille des images ainsi qu’un choix judicieux du nombre de composantes PCA améliorent les performances.
 La régularisation L1 avec solver ‘saga’ aide à obtenir un modèle plus parcimonieux sans perte de précision notable.
 
-Pour aller plus loin, l’intégration de techniques de Deep Learning, notamment les CNN, serait la voie privilégiée pour exploiter pleinement la nature visuelle des images médicales.
-## 3. Impact des Paramètres sur la Régression Linéaire
+Pour aller plus loin, l’intégration de techniques de Deep Learning, notamment les CNN, serait la voie privilégiée pour exploiter pleinement la nature visuelle des images médicales
 
-### 3.1 Introduction
+## Impact des Paramètres sur la Régression Linéaire
 
-Ce modèle explore l’utilisation de la **régression linéaire** pour la classification de radiographies thoraciques en trois catégories : **Normal**, **Pneumonie Bactérienne** et **Pneumonie Virale**.
-Contrairement aux classifieurs classiques, les prédictions continues sont **arrondies** et **bornées** pour être mappées sur des classes discrètes (0, 1, 2).
-
-L’objectif est d’évaluer l’influence de certains paramètres — taille d’image, normalisation, intercept — sur les performances du modèle.
-
-### 3.2 Description du Dataset et Prétraitement
-
-Les images sont transformées comme suit :
-
-- Conversion en niveaux de gris
-- Aplatissement en vecteurs
-- Normalisation des pixels dans l’intervalle [0, 1]
-- Redimensionnement (principalement en 128x128, mais d’autres tailles ont été testées)
-
-Les données sont divisées de manière **stratifiée** en 80% pour l’entraînement et 20% pour le test.
-
-### 3.3 Modèle Baseline
+### Hyperparamètres
 
 Le modèle de base repose sur `LinearRegression()` de `scikit-learn`.
 La prédiction continue est arrondie avec `np.round()` puis **clipée** dans l’intervalle [0, 2].
@@ -314,9 +232,9 @@ La prédiction continue est arrondie avec `np.round()` puis **clipée** dans l�
 
 **Accuracy obtenue : 73%**
 
-### 3.4 Expérimentations
+### Résultats
 
-#### 3.4.1 Variation de la Taille des Images
+#### Variation de la Taille des Images
 
 | ID | Modification              | Description                              | Résultat (Accuracy) |
 | -- | ------------------------- | ---------------------------------------- | -------------------- |
@@ -325,7 +243,7 @@ La prédiction continue est arrondie avec `np.round()` puis **clipée** dans l�
 
 **Observation :** Une taille d’image trop réduite nuit à la précision, probablement en raison d’une perte d’information. Une taille supérieure à 128x128 améliore légèrement les performances mais augmente le coût computationnel.
 
-#### 3.4.2 Ajustement de l’Intercept
+#### Ajustement de l’Intercept
 
 | ID | Modification            | Description               | Résultat (Accuracy) |
 | -- | ----------------------- | ------------------------- | -------------------- |
@@ -333,7 +251,7 @@ La prédiction continue est arrondie avec `np.round()` puis **clipée** dans l�
 
 **Observation :** Supprimer le biais (`intercept`) dégrade la précision. Cela montre son importance dans le bon ajustement des prédictions.
 
-### 3.5 Exemple de Code avec Régression Ridge
+### Exemple de Code avec Régression Ridge
 
 ```python
 from sklearn.linear_model import Ridge
@@ -355,7 +273,7 @@ accuracy = np.mean(y_pred_rounded == y_test)
 print(f"Accuracy: {accuracy:.2f}")
 ```
 
-### 3.6 Conclusion
+### Observation
 
 La régression linéaire simple, bien que peu adaptée de prime abord à la classification, permet ici d’atteindre une précision correcte (73%).
 Les expérimentations montrent :
