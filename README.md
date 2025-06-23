@@ -72,9 +72,14 @@ directement les algorithmes facililant la mise en place.
 
 ### Explication
 
+KNN (K-Nearest Neighbors) est un algorithme d'apprentissage supervisé simple qui prédit la classe (ou la valeur) d'un point en se basant sur ses **K** voisins les plus proches dans l'ensemble de données d'entraînement. Il utilise un vote majoritaire parmi les voisins.
 
+### Hyperparamètres
 
-### Résultat 
+KNN a qu'un seul hyperparamètre, ce dernier étant le nombre de voisin.
+Plus K est grand moins il est sensible au bruit, mais perd de la précision sur la différences entre petit détail
+
+### Résultats 
 
 #### Meilleures Résultats
 
