@@ -154,6 +154,7 @@ L’objectif est de trouver un compromis entre richesse des données conservées
 - Mode `multinomial` (classification multi-classe)
 - Régularisation de type `L2` (ridge)
 - Solveur `saga` ou `lbfgs` selon les cas
+- `max_iter` pour le  nombre d'itération max
 
 ### Résultat
 
