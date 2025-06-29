@@ -1,229 +1,376 @@
 # T-DEV-810
 
+## Introduction
 
-# Introduction
+La détection automatisée des pneumonies à partir de radiographies thoraciques constitue un enjeu majeur pour améliorer le diagnostic médical. Ce rapport, réalisé dans le cadre du module **T-DEV-810**, explore différentes approches de classification supervisée pour distinguer trois classes : **Normal**, **Pneumonie Bactérienne** et **Pneumonie Virale**.
 
-La détection automatisée des pneumonies à partir de radiographies thoraciques constitue un enjeu majeur pour améliorer le diagnostic médical. Ce rapport, réalisé dans le cadre du module T-DEV-810, explore différentes approches de classification supervisée pour distinguer trois classes : **Normal**, **Pneumonie Bactérienne** et **Pneumonie Virale**.
+L’objectif est d’évaluer et comparer plusieurs modèles classiques — **régression logistique**, **régression linéaire**, **Random Forest**, et **PCA combinée à une régression logistique** — en termes de précision, complexité et capacité de généralisation.
 
-L’objectif est d’évaluer et comparer plusieurs modèles — **KNN**, **Random Forest**, **Régression Logistique**, **Régression Linéaire**, **PCA + Régression Logistique**, **Cross-Décomposition**, et **CNN** — en termes de **précision**, **complexité** et **capacité de généralisation**.
-
-La problématique est la suivante :  
+La problématique est la suivante :
 **Quelle méthode de classification permet d’obtenir la meilleure précision tout en conservant une certaine interprétabilité et une complexité raisonnable pour le traitement des images médicales ?**
 
----
-
-# Table des Matières
-
-1. Le jeu de données  
-2. Transformations des données pour les algorithmes  
-3. K-Nearest Neighbors (KNN)  
-4. Random Forest  
-5. Régression Logistique (avec/sans PCA)  
-6. Régression Linéaire  
-7. Cross-Décomposition (PLS)  
-8. Convolutional Neural Networks (CNN)  
-9. Conclusion
+## Table des Matières
 
 ---
 
-# 1. Le jeu de données
+## 1. Le jeu de données
 
-Les radiographies se trouvent dans le dossier `chest_Xray`, avec :
+### Où le trouver ?
+Les radiographies se trouvent  dans le dans le dossier [chest_Xray](https://github.com/EpitechMscProPromo2026/T-DEV-810-STG_10/tree/main/chest_Xray):
 
-- **5216 images pour l’entraînement** : 1341 normales, 3875 pneumonies.  
-- **624 images pour les tests** : 234 normales, 390 pneumonies.
+avec **5216** radiographies de train dont:
+  - 1341 radiographies saines
+  - 3875 radiographies de pneumonies
 
-Soit environ **88 % pour l’entraînement** et **12 % pour le test**.
+et **624** radiographies de tests dont:
+  - 234 radiographies saines
+  - 390 radiographies de pneumonies
 
-Les dossiers `NORMAL` contiennent les radiographies saines, `PNEUMONIA` celles de pneumonies, et les noms d’images (ex. `image_241_virus.jpg`) indiquent le type de pneumonie.
+Donc on a environs 88% des images pour l'entraînement et 12% pour les tests
 
----
+### Comment obtenir les libellés ?
 
-# 2. Transformations des données pour les algorithmes
+```
+.
+├── test/
+│   ├── NORMAL/
+│   │   └── nom_image
+│   └── PNEUMONIA/
+│       └── nom_image_(virus/bacterie)
+└── train/
+    ├── NORMAL/
+    │   └── nom_image
+    └── PNEUMONIA/
+        └── nom_image_(virus/bacterie)
+```
 
-Pour comparer équitablement chaque méthode, nous appliquons le même traitement d’images, sauf mention contraire :
+Les images se trouvant dans les dossiers *NORMAL* sont des radiographies saines, les dossiers *PNEUMONIA* sont des radiographies de pneumonies et le type de la pneumonies se trouve dans le nom de l'image (ex: image_241_virus.jpg)
 
-- Redimensionnement à une taille fixe (tests entre 400×400 et 100×100 px, **128×128** le plus performant)  
-- Conversion en niveau de gris et aplatissement (**flatten**) pour obtenir un vecteur 1D  
-- **Normalisation** des pixels (division par 255) pour certaines méthodes  
-- Les pixels sont considérés comme **features individuelles**
+## Transformations des données pour les Algorithmes
 
----
+Pour permettre une comparaison entre chaque algorithme on a essayé d'avoir le plus souvent les mêmes traitement d'images à chaque fois, des précisions seront présentes si pour l'algorithme on a fait d'autres transformations.
 
-# 3. K-Nearest Neighbors (KNN)
+Les algorithmes demandent d'avoir le même nombre de features[^1] ce qui nous oblige a redimensionné les images dans une taille fixe, pour tous les algorithmes les images sont redimensionné entre 400x400 et 100x100 pixels dont le plus performant étant 128x128.
 
-## Explication  
-KNN prédit la classe d’un point d’après le vote majoritaire de ses K plus proches voisins.
+On a obtenu ce chiffre en testant différentes tailles sur les algorithmes.
 
-## Hyperparamètre  
-Nombre de voisins K :
-- Plus K est grand → moins sensible au bruit
-- Mais moins précis pour les détails fins
+Puis les images sont flatten[^2] car le modèle ne prends pas les tableaux à plusieurs dimensions.
 
-## Résultats
+> Une image en nuance de gris contient 2 dimensions (position x et y du pixel qui contient la valeur du gris dans le pixel)
+> Une image en couleur contient 3 dimensions (position x et y qui contiennent un tableau contenant les valeurs pour les couleurs RGB (Red-Blue-Green))
 
-| K   | Classification | Accuracy test |
-|-----|----------------|----------------|
-| 2   | Binaire        | 79 %           |
-| 12  | Ternaire       | 66 %           |
-
-## Observation  
-- Les différences visuelles entre classes sont subtiles  
-- KNN requiert beaucoup de mémoire  
-- Moins efficace pour distinguer bactérienne vs virale
-
----
-
-# 4. Random Forest
-
-## Explication  
-Ensemble d’arbres de décision, chaque arbre vote, la forêt tranche à la majorité.
-
-## Optimisation  
-Utilisation de `GridSearchCV`.
-
-| Hyperparamètre       | Valeur optimale |
-|----------------------|-----------------|
-| criterion            | entropy         |
-| max_depth            | None            |
-| max_features         | sqrt            |
-| min_samples_split    | 10              |
-| n_estimators         | 300             |
-
-## Performance  
-**Accuracy test** : ~78 %
-
-## Observation  
-- Simple et interprétable  
-- Ignore la structure spatiale de l’image  
-- Inférieur aux performances des CNN
+[^1]: Une feature est un pixel de notre image qu'on souhaite passer dans le modèle
+[^2]: Transformations d'un tableau avec X dimensions en un tableau d'une seule dimension 
 
 ---
 
-# 5. Régression Logistique (avec/sans PCA)
+A partir de maintenant on va aborder les modèles tester, les résultats et une observation de nos résultats.
+Pour commencer tous les algorithmes en dehors du deep learning proviennent de la librairie `sklearn` qui implémente 
+directement les algorithmes facililant la mise en place.
 
-## Explication  
-Classification multiclasse (multinomial), régularisation **L2**
+## Algorithme KNearest-Neighbors (KNN)
 
-### Without PCA
+### Explication
 
-- Accuracy (100×100) : 85 %
+KNN (K-Nearest Neighbors) est un algorithme d'apprentissage supervisé simple qui prédit la classe (ou la valeur) d'un point en se basant sur ses **K** voisins les plus proches dans l'ensemble de données d'entraînement. Il utilise un vote majoritaire parmi les voisins.
 
-### With PCA
+### Hyperparamètres
 
-| ID  | Image     | n_components       | Accuracy |
-|-----|-----------|---------------------|----------|
-| P1  | 100×100   | 0.90 (variance)     | 86 %     |
-| P2  | 100×100   | 0.99 (variance)     | 86 %     |
-| P4  | 100×100   | 300 composantes     | 86 %     |
+KNN a qu'un seul hyperparamètre, ce dernier étant le nombre de voisin.
+Plus K est grand moins il est sensible au bruit, mais perd de la précision sur la différences entre petit détail
 
-### Optimisation du modèle
+### Résultats 
 
-| ID  | Paramètres                         | Accuracy |
-|-----|------------------------------------|----------|
-| M0  | max_iter=1000                      | 86 %     |
-| M3  | penalty='l1', solver='saga'        | 86 %     |
-| M4  | C=0.1                              | 78 %     |
+#### Meilleures Résultats
 
-## Observation  
-- Bon compromis précision/interprétabilité (~86 %)  
-- PCA réduit la charge et améliore parfois la régularisation  
-- Nécessite un modèle spatial (CNN) pour aller plus loin
+| Paramètres | type classification | Accuracy |
+| ---------- | ------------------- | -------- |
+| 2          | binaire             | 79%      |
+| 12         | ternaire            | 66%      | 
 
----
+#### Courbes des précisions en fonction du nombre de voisin
+##### Binaire
+![classification binaire](./knn/classification_binaire.png)
 
-# 6. Régression Linéaire
+##### Ternaire
+![classification ternaire](./knn/classification_trinaire.png)
 
-## Configuration  
-- Prédiction continue, arrondie et clipée en [0,2]  
-- Images 128×128, niveau de gris, normalisées
+### Observation 
 
-## Résultats
+L'algorithme pourrait être plus intéressant sur des données qui sont plus différentes les une des autres, par exemple une IA qui permet de voir quel
+animal est représenté sur l'image car un chien et un chat ont des grandes différences. 
+Dans notre cas, les images n'ont pas d'énormes différences visibles, une personne qui n'est pas du domaine n'arriverai pas à dire laquel est une pneumonie ou pas. 
 
-| ID  | Modification          | Accuracy |
-|-----|-----------------------|----------|
-| V1  | 64×64                 | 62 %     |
-| V2  | 256×256               | 71 %     |
-| M1  | fit_intercept=False   | 68 %     |
+En plus KNN prends énormément de RAM car quand il cherche à prédire une image, il est obligé de mettre en mémoire chaque point de chaque image pour faire les calculs de distance le plus rapidement possible.
 
-## Observation  
-- Trop petite taille = perte d’information  
-- Intercept nécessaire  
-- Modèle simple, améliorable avec Ridge, Lasso
+On remarque sur les résultats que l'algorithme s'en sort moins bien avec la classification entre virale et bactérienne, car la différence est moins visible qu'entre une personne ayant une pneumonie et une personne qui n'en a pas.
 
----
+## Détection de la Pneumonie via Random Forest
 
-# 7. Cross-Décomposition (PLS)
+### Explication
 
-## Explication  
-PLS (Partial Least Squares) : réduction de dimension + régression simultanées
+### Hyperparamètre
 
-## Paramètres testés  
-`n_components` = [5, 10, 20, 50]
+Pour optimiser mes hyperparamètres j'ai utilisé une fonction de `sklean` se nommant `GridSearchCV` qui prends en paramètres une liste de dictionnaires associant 
+le nom de l'hyperparamètre avec une liste de valeur possible. Ainsi cette fonction va exécuter automatiquement le modèle avec les différents hyperparamètres 
+et retourne les hyperparamètres qui ont mieux performés.
 
-## Résultats
+#### Meilleures Hyperparamètres
 
-| ID   | n_components | Accuracy test |
-|------|--------------|---------------|
-| C5   | 5            | 80 %          |
-| C10  | 10           | 84 %          |
-| C20  | 20           | 87 %          |
-| C50  | 50           | 86 %          |
+Les meilleurs paramètres obtenus sont :
 
-## Observation  
-- Très bon score (~87 %)  
-- Méthode hybride : compression + classification  
-- Composantes plus explicables que les pixels bruts
+| Hyperparamètre       | Valeur sélectionnée |
+| --------------------- | --------------------- |
+| `criterion`         | `entropy`           |
+| `max_depth`         | `None`              |
+| `max_features`      | `sqrt`              |
+| `min_samples_split` | `10`                |
+| `n_estimators`      | `300`               |
 
----
+### Évaluation du Modèle
 
-# 8. Convolutional Neural Networks (CNN)
+Cette configuration a permis d’atteindre une **précision d’environ 78 %** sur le jeu de test.
 
-## Explication  
-CNN capturent les motifs spatiaux grâce aux convolutions, pooling, etc.
+### Observation
 
-## Architecture de base
+Le modèle Random Forest constitue une **première approche simple et interprétable** pour classifier des radiographies pulmonaires.
+Toutefois, les performances sont limitées (78 % de précision) comparées à d’autres méthodes.
+Cela s’explique par l’absence de prise en compte de la structure spatiale des images.
+L’utilisation de modèles plus complexes, tels que les **réseaux convolutifs (CNN)**, semble inévitable pour améliorer significativement la performance sur ce type de données.
+
+
+## Détection de la Pneumonie via Régression Logistique
+
+### Explication
+
+#### Régression logistique
+
+#### PCA
+
+La PCA est appliquée pour réduire la dimensionnalité des vecteurs d’images tout en conservant la majorité de la variance. Différentes configurations ont été testées :
+
+- Nombre de composantes défini par la variance expliquée (n_components=0.95, 0.90, 0.99)
+- Nombre fixe de composantes (100, 300)
+
+L’objectif est de trouver un compromis entre richesse des données conservées et complexité du modèle.
+
+### Hyperparamètre
+
+- Mode `multinomial` (classification multi-classe)
+- Régularisation de type `L2` (ridge)
+- Solveur `saga` ou `lbfgs` selon les cas
+- `max_iter` pour le  nombre d'itération max
+
+### Résultat
+
+#### Sans PCA
+
+### Matrix de confusion
+![classification binaire](./LogisticRegression/confusion_matrix.png)
+
+#### Avec PCA
+
+##### Impact de la taille des images
+
+| ID       | Taille Image | Description                          | Accuracy |
+| -------- | ------------ | ------------------------------------ | -------- |
+| Baseline | 400x400      | Réglage de base                     | 82%      |
+| V1       | 200x200      | Réduction de la taille, plus rapide | 82%      |
+| V2       | 128x128      | Taille intermédiaire                | 80%      |
+| V3       | 100x100      | Compression agressive                | 85%      |
+
+**Observation :** La réduction agressive à 100x100 améliore légèrement la précision, probablement par effet de régularisation ou réduction du bruit.
+
+##### Influence du nombre de composantes PCA (avec image_size=100x100)
+
+| ID | n_components          | Description                         | Accuracy |
+| -- | --------------------- | ----------------------------------- | -------- |
+| P0 | 0.95 (variance)       | Baseline                            | 85%      |
+| P1 | 0.90 (moins de comp.) | Moins de composantes, plus rapide   | 86%      |
+| P2 | 0.99 (plus riche)     | Conserve davantage d’information   | 86%      |
+| P3 | 100 (fixe)            | Nombre fixe de composantes          | 84%      |
+| P4 | 300 (très riche)     | Risque de bruit ou surapprentissage | 86%      |
+
+##### Réglages du modèle de régression logistique
+
+| ID | Paramètres                 | Description                                    | Accuracy |
+| -- | --------------------------- | ---------------------------------------------- | -------- |
+| M0 | max_iter=1000               | Baseline                                       | 86%      |
+| M1 | max_iter=2000               | Plus d’itérations                            | 84%      |
+| M2 | solver='saga'               | Optimisé pour grands jeux de données         | 85%      |
+| M3 | penalty='l1', solver='saga' | Régularisation Lasso favorisant la parcimonie | 86%      |
+| M4 | C=0.1                       | Régularisation forte, modèle plus simple     | 78%      |
+| M5 | C=10.0                      | Faible régularisation, modèle plus flexible  | 84%      |
+
+##### Synthèse des Meilleures Configurations
+
+| Test ID    | Accuracy | Commentaires                                    |
+| ---------- | -------- | ----------------------------------------------- |
+| V3         | 85%      | Taille image réduite améliore la précision   |
+| P1, P2, P4 | 86%      | PCA avec 90%-99% variance conservée optimal    |
+| M0, M3     | 86%      | Régression avec L1 et solver 'saga' performant |
+
+
+### Observation
+
+La **régression logistique multinomiale** constitue une **baseline solide et interprétable** pour des tâches de classification d’images.
+Toutefois, ses performances sont limitées dès que la structure spatiale des images devient déterminante, ce qui est le cas pour les radiographies médicales.
+Des techniques comme les **réseaux de neurones convolutifs (CNN)** devraient être privilégiées pour améliorer significativement les résultats.
+
+L’utilisation combinée de la réduction de dimension par PCA et d’un modèle de régression logistique permet d’atteindre une précision satisfaisante (~86%) pour la classification de radiographies en trois classes.
+Les résultats suggèrent qu’une réduction modérée de la taille des images ainsi qu’un choix judicieux du nombre de composantes PCA améliorent les performances.
+La régularisation L1 avec solver ‘saga’ aide à obtenir un modèle plus parcimonieux sans perte de précision notable.
+
+Pour aller plus loin, l’intégration de techniques de Deep Learning, notamment les CNN, serait la voie privilégiée pour exploiter pleinement la nature visuelle des images médicales
+
+## Impact des Paramètres sur la Régression Linéaire
+
+### Hyperparamètres
+
+Le modèle de base repose sur `LinearRegression()` de `scikit-learn`.
+La prédiction continue est arrondie avec `np.round()` puis **clipée** dans l’intervalle [0, 2].
+
+| Paramètre           | Valeur                             |
+| -------------------- | ---------------------------------- |
+| Modèle              | `LinearRegression()`             |
+| Taille des images    | `(128, 128)`                     |
+| Mode                 | Niveaux de gris, images aplaties   |
+| Normalisation        | Pixels divisés par 255            |
+| Jeu de test          | 20% des données, stratifié       |
+| Arrondi prédictions | `np.round()` + `np.clip(0, 2)` |
+
+**Accuracy obtenue : 73%**
+
+### Résultats
+
+#### Variation de la Taille des Images
+
+| ID | Modification              | Description                              | Résultat (Accuracy) |
+| -- | ------------------------- | ---------------------------------------- | -------------------- |
+| V1 | `image_size=(64, 64)`   | Taille plus petite, moins de dimensions  | 62%                  |
+| V2 | `image_size=(256, 256)` | Taille plus grande, plus d’informations | 71%                  |
+
+**Observation :** Une taille d’image trop réduite nuit à la précision, probablement en raison d’une perte d’information. Une taille supérieure à 128x128 améliore légèrement les performances mais augmente le coût computationnel.
+
+#### Ajustement de l’Intercept
+
+| ID | Modification            | Description               | Résultat (Accuracy) |
+| -- | ----------------------- | ------------------------- | -------------------- |
+| M1 | `fit_intercept=False` | Ne pas apprendre de biais | 68%                  |
+
+**Observation :** Supprimer le biais (`intercept`) dégrade la précision. Cela montre son importance dans le bon ajustement des prédictions.
+
+### Exemple de Code avec Régression Ridge
+
+```python
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import train_test_split
+import numpy as np
+
+# Entraînement du modèle
+model = Ridge(alpha=1.0)
+model.fit(X_train, y_train)
+
+# Prédiction
+y_pred = model.predict(X_test)
+
+# Arrondi et clipping des prédictions pour correspondre aux classes 0,1,2
+y_pred_rounded = np.clip(np.round(y_pred), 0, 2).astype(int)
+
+# Calcul de l'accuracy
+accuracy = np.mean(y_pred_rounded == y_test)
+print(f"Accuracy: {accuracy:.2f}")
+```
+
+### Observation
+
+La régression linéaire simple, bien que peu adaptée de prime abord à la classification, permet ici d’atteindre une précision correcte (73%).
+Les expérimentations montrent :
+
+L’importance de la taille des images : trop petite = perte d’information, trop grande = gain modéré + coût accru
+
+Le rôle essentiel du biais (intercept) dans l’apprentissage
+
+Pour améliorer ces résultats, on pourrait explorer :
+
+Des modèles régularisés (Ridge, Lasso)
+
+Des transformations non linéaires
+
+Des approches neuronales ou convolutives
+
+## Convolution Neural Networks (CNN)
+### Explication
+
+Les réseaux de neurones convolutifs (CNN) sont spécialement conçus pour traiter les données structurées en grille, comme les images. Ils exploitent des couches de convolution pour extraire automatiquement des caractéristiques pertinentes (bords, textures, motifs). Les CNN sont aujourd’hui la référence pour la classification d’images médicales.
+
+### Architecture utilisée
+
+Nous avons utilisé une architecture simple composée de :
+
+- 1 couche de convolution (Conv2D) avec 32 filtres, activation ReLU et padding 'same'
+- 1 couche de pooling (MaxPooling2D) pour réduire la dimensionnalité
+- Une couche de flatten pour passer à un vecteur 1D
+- 1 couche dense (Dense) avec 32 neurones et activation ReLU
+- 1 couche de sortie dense avec 1 neurone et activation sigmoid (pour la classification binaire)
+
+Exemple de code (Keras) :
 
 ```python
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 
-baseline = Sequential([
-    Conv2D(32, (3,3), activation='relu', padding='same', input_shape=[128,128,1]),
-    MaxPooling2D((2,2)),
-    Flatten(),
-    Dense(32, activation='relu'),
-    Dense(3, activation='softmax')
-])
+baseline = Sequential()
+baseline.add(Conv2D(32, (3,3), activation='relu', padding='same', input_shape=[128,128,1]))
+baseline.add(MaxPooling2D(pool_size=(2,2)))
+baseline.add(Flatten())
+baseline.add(Dense(32, activation='relu'))
+baseline.add(Dense(1, activation='sigmoid'))
 ```
 
-## Résultat  
-**Accuracy test** : 97 %
 
-## Observation  
-- Meilleure performance globale  
-- Fort besoin en données et en puissance  
-- Transfer learning possible pour améliorer encore
+### Résultats
 
----
+Après entraînement sur 30 époques , le modèle atteint :
 
-# 9. Conclusion
+- **Accuracy sur le jeu de test : ~97%**
+- Amélioration nette par rapport aux modèles de machine learning
+- Meilleure capacité à distinguer les trois classes, y compris entre bactérienne et virale
 
-La détection automatique de pneumonies à partir d’imagerie médicale représente un défi à la croisée de la santé et de l’intelligence artificielle. Dans ce projet, nous avons comparé différentes approches de classification supervisée — allant des méthodes linéaires aux réseaux neuronaux convolutifs — dans le but de distinguer les cas **normaux**, de **pneumonies bactériennes** et de **pneumonies virales** à partir de radiographies thoraciques.
+### Accuracy
+![classification binaire](./Keras/accuracy_curve.png)
+### Loss
+![classification binaire](./Keras/loss_curve.png)
 
-Les résultats montrent que les **réseaux de neurones convolutifs (CNN)** se démarquent nettement, atteignant une précision de **97 %**, grâce à leur capacité à exploiter les structures spatiales des images. Toutefois, cette performance a un coût en termes de **complexité computationnelle**, de **temps d’entraînement** et de **besoin en données annotées**.
 
-En parallèle, des méthodes plus classiques comme la **Régression Logistique combinée à la PCA** ou la **Cross-Décomposition (PLS)** atteignent des scores proches de **86–87 %**, avec une interprétabilité appréciable et une complexité bien plus faible. Ces approches se révèlent donc intéressantes dans un cadre de **diagnostic assisté**, où la transparence des décisions est cruciale.
+### Observation
 
-Les algorithmes comme **KNN** ou **Random Forest** offrent une mise en œuvre simple, mais restent limités par leur faible capacité à capter les nuances visuelles fines entre les types de pneumonie. Enfin, la **régression linéaire**, bien qu’inadaptée pour ce type de tâche, a servi de **référence de base** pour évaluer les gains des méthodes plus avancées.
+Les CNN surpassent largement les méthodes classiques dès lors que la structure spatiale de l’image est importante. Ils nécessitent cependant plus de données, de puissance de calcul et un temps d’entraînement plus long.
 
-## Perspectives
+Pour aller plus loin, on pourrait :
+
+- Utiliser des architectures plus profondes (ResNet, VGG)
+- Appliquer le transfert learning avec des modèles pré-entraînés
+- Explorer des techniques d’explicabilité pour la médecine
+
+
+## 7. Conclusion
+
+La détection automatique de pneumonies à partir d’imagerie médicale représente un défi à la croisée de la santé et de l’intelligence artificielle. Dans ce projet, nous avons comparé différentes approches de classification supervisée — allant des méthodes linéaires aux réseaux neuronaux convolutifs — dans le but de distinguer les cas normaux, de pneumonies bactériennes et de pneumonies virales à partir de radiographies thoraciques.
+
+Les résultats montrent que les réseaux de neurones convolutifs (CNN) se démarquent nettement, atteignant une précision de 97 %, grâce à leur capacité à exploiter les structures spatiales des images. Toutefois, cette performance a un coût en termes de complexité computationnelle, de temps d’entraînement et de besoin en données annotées.
+
+En parallèle, des méthodes plus classiques comme la Régression Logistique combinée à la PCA ou la Cross-Décomposition (PLS) atteignent des scores proches de 86–87 %, avec une interprétabilité appréciable et une complexité bien plus faible. Ces approches se révèlent donc intéressantes dans un cadre de diagnostic assisté, où la transparence des décisions est cruciale.
+
+Les algorithmes comme KNN ou Random Forest offrent une mise en œuvre simple, mais restent limités par leur faible capacité à capter les nuances visuelles fines entre les types de pneumonie. Enfin, la régression linéaire, bien qu’inadaptée pour ce type de tâche, a servi de référence de base pour évaluer les gains des méthodes plus avancées.
+
+### **Perspectives**
 
 Pour approfondir ces travaux, plusieurs axes peuvent être explorés :
 
-- L’intégration de **modèles plus profonds** (e.g. ResNet, VGG) via **transfer learning**  
-- L’utilisation de **techniques d’augmentation de données** pour améliorer la robustesse des modèles  
-- L’application de **méthodes d’explicabilité** comme Grad-CAM ou LIME, afin de mieux comprendre les décisions du modèle  
-- Une **validation sur des jeux de données externes** pour évaluer la **généralisation** du modèle
+* L’intégration de modèles plus profonds (e.g. ResNet, VGG) via transfer learning, pour bénéficier de connaissances pré-apprises.
+* L’utilisation de techniques d’augmentation de données pour améliorer la robustesse des modèles.
+* L’application de méthodes d’explicabilité comme Grad-CAM ou LIME, afin de mieux comprendre les décisions du modèle — un point crucial en contexte médical.
+* Enfin, une validation sur des jeux de données externes permettrait d’évaluer la généralisation du modèle à d’autres contextes cliniques.
 
-En somme, si les CNN s’imposent comme l’option la plus performante, les méthodes plus légères restent de très bonnes candidates dans des environnements contraints, ou lorsqu’une **interprétabilité fiable** est requise.
+En somme, si les CNN s’imposent comme l’option la plus performante, les méthodes plus légères restent de très bonnes candidates dans des environnements contraints, ou lorsqu’une interprétabilité fiable est requise.
