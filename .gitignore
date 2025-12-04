@@ -2,3 +2,5 @@ venv
 .ipynb_checkpoints
 baseline.h5
 *.joblib
+chest_xray/
+.vscode/
